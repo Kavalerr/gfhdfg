@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Крестики-нолики 4x4</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+        }
+        #game {
+            display: grid;
+            grid-template-columns: repeat(4, 80px);
+            grid-gap: 5px;
+        }
+        .cell {
+            width: 80px;
+            height: 80px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2em;
+            background-color: white;
+            border: 2px solid #333;
+            cursor: pointer;
+        }
+        .cell:hover {
+            background-color: #e0e0e0;
+        }
+        .blocked {
+            background-color: red; /* Заблокированные клетки красные */
+        }
+        #status {
+            margin-top: 20px;
+            font-size: 1.5em;
+        }
+    </style>
+</head>
+<body>
+    <div id="game"></div>
+    <div id="status"></div>
+    <script>
+        const gameBoard = document.getElementById('game');
+        const statusDisplay = document.getElementById('status');
+        let board = Array(16).fill('');
+        let currentPlayer = 'X';
+        let gameActive = true;
+        let blockCount = { 'X': 0, 'O': 0 };
+        let blockedCells = [];
+
+        const winningConditions = [
+            [0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11], [12, 13, 14, 15], // Горизонтали
+            [0, 4, 8, 12], [1, 5, 9, 13], [2, 6, 10, 14], [3, 7, 11, 15], // Вертикали
+            [0, 5, 10, 15], [3, 6, 9, 12] // Диагонали
+        ];
+
+        function createBoard() {
+            board.forEach((cell, index) => {
+                const cellElement = document.createElement('div');
+                cellElement.classList.add('cell');
+                cellElement.setAttribute('data-cell-index', index);
+                cellElement.addEventListener('click', handleCellClick);
+                gameBoard.appendChild(cellElement);
+            });
+        }
+
+        function handleCellClick(event) {
+            const clickedCell = event.target;
+            const clickedCellIndex = clickedCell.getAttribute('data-cell-index');
+
+            if (blockedCells.includes(clickedCellIndex) || board[clickedCellIndex] !== '' || !gameActive) {
+                return;
+            }
+
+            board[clickedCellIndex] = currentPlayer;
+            clickedCell.innerHTML = currentPlayer;
+
+            // Проверка на победу
+            if (checkWin()) {
+                statusDisplay.innerHTML = `Игрок ${currentPlayer} выиграл!`;
+                gameActive = false;
+                return;
+            }
+
+            // Удаление первой фишки, если их больше 4
+            if (board.filter(cell => cell === currentPlayer).length > 4) {
+                const firstIndex = board.indexOf(currentPlayer);
+                board[firstIndex] = '';
+                gameBoard.children[firstIndex].innerHTML = '';
+            }
+
+            // Блокировка клеток
+            if (blockCount[currentPlayer] < 2) {
+                blockCount[currentPlayer]++;
+                blockedCells.push(clickedCellIndex);
+                clickedCell.classList.add('blocked'); // Добавляем класс для блокировки
+                statusDisplay.innerHTML = `${currentPlayer}, ваше поле заблокировано.`;
+            } else {
+                currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+                statusDisplay.innerHTML = `Текущий игрок: ${currentPlayer}`;
+            }
+        }
+
+        function checkWin() {
+            return winningConditions.some(condition => {
+                const [a, b, c, d] = condition;
+                // Проверяем, что все клетки принадлежат текущему игроку и не заблокированы
+                return (
+                    board[a] === currentPlayer &&
+                    board[b] === currentPlayer &&
+                    board[c] === currentPlayer &&
+                    board[d] === currentPlayer &&
+                    !blockedCells.includes(a) &&
+                    !blockedCells.includes(b) &&
+                    !blockedCells.includes(c) &&
+                    !blockedCells.includes(d)
+                );
+            });
+        }
+
+        createBoard();
+        statusDisplay.innerHTML = `Текущий игрок: ${currentPlayer}`;
+    </script>
+</body>
+</html>
